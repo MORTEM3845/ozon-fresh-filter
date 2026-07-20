@@ -1,0 +1,4 @@
+.of-good { outline: 3px solid rgba(25, 160, 80, .8) !important; outline-offset: -3px !important; }
+.of-bad { outline: 2px solid rgba(205, 55, 55, .65) !important; outline-offset: -2px !important; }
+.of-hidden { display: none !important; }
+.of-badge { position: absolute !important; top: 6px !important; left: 6px !important; z-index: 2147483646 !important; max-width: calc(100% - 12px) !important; padding: 4px 7px !important; border-radius: 7px !important; background: rgba(20, 20, 24, .88) !important; color: white !important; font: 600 12px/1.2 Arial, sans-serif !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; pointer-events: none !important; box-sizing: border-box !important; }

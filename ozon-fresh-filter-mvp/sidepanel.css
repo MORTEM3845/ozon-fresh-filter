@@ -1,0 +1,34 @@
+:root { color-scheme: light dark; font-family: Inter, Segoe UI, Arial, sans-serif; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 12px; background: Canvas; color: CanvasText; }
+header { margin-bottom: 12px; }
+h1 { margin: 0 0 6px; font-size: 20px; }
+h2 { margin: 0 0 10px; font-size: 15px; }
+.status { min-height: 18px; color: GrayText; font-size: 12px; }
+.actions, .toolbar { display: flex; gap: 7px; margin-bottom: 12px; }
+button, select, input, textarea { font: inherit; }
+button { padding: 8px 10px; border: 1px solid color-mix(in srgb, CanvasText 20%, transparent); border-radius: 8px; background: ButtonFace; color: ButtonText; cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
+button.primary { flex: 1; background: #005bff; color: white; border-color: #005bff; }
+.filters { padding: 11px; margin-bottom: 12px; border: 1px solid color-mix(in srgb, CanvasText 15%, transparent); border-radius: 10px; }
+.filters label { display: block; margin-bottom: 9px; font-size: 12px; }
+.filters input[type="number"], .filters textarea { width: 100%; margin-top: 4px; padding: 7px 8px; border: 1px solid color-mix(in srgb, CanvasText 20%, transparent); border-radius: 7px; background: Field; color: FieldText; }
+.filters textarea { resize: vertical; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.checkbox { display: flex !important; align-items: center; gap: 7px; margin-bottom: 0 !important; }
+.summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 12px; }
+.summary div { padding: 8px 5px; border-radius: 9px; background: color-mix(in srgb, CanvasText 7%, transparent); text-align: center; }
+.summary strong, .summary span { display: block; }
+.summary strong { font-size: 18px; }
+.summary span { color: GrayText; font-size: 11px; }
+.toolbar select { flex: 1; padding: 7px; border-radius: 8px; }
+#productList { display: grid; gap: 8px; }
+.product { display: grid; grid-template-columns: 58px 1fr; gap: 9px; padding: 8px; border: 1px solid color-mix(in srgb, CanvasText 15%, transparent); border-radius: 10px; cursor: pointer; }
+.product.unsuitable { opacity: .55; }
+.product img { width: 58px; height: 58px; object-fit: cover; border-radius: 8px; background: color-mix(in srgb, CanvasText 7%, transparent); }
+.product-title { margin-bottom: 4px; font-size: 12px; line-height: 1.25; }
+.product-meta { display: flex; flex-wrap: wrap; gap: 5px 8px; font-size: 12px; }
+.price { font-weight: 700; }
+.discount { color: #169c50; font-weight: 700; }
+.reason { margin-top: 5px; color: #c73d3d; font-size: 11px; }
+.empty { padding: 25px 8px; color: GrayText; text-align: center; }

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ozon Fresh Filter</title>
+    <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+    <header>
+        <h1>Ozon Fresh Filter</h1>
+        <div id="status" class="status">Открой каталог Ozon</div>
+    </header>
+
+    <section class="actions">
+        <button id="startButton" class="primary">Собрать все товары</button>
+        <button id="stopButton">Стоп</button>
+        <button id="clearButton">Очистить</button>
+    </section>
+
+    <section class="filters">
+        <h2>Фильтры</h2>
+        <div class="row">
+            <label>Цена до, ₽ <input id="maxPrice" type="number" min="0" step="10" placeholder="без лимита"></label>
+            <label>Скидка от, % <input id="minDiscount" type="number" min="0" max="99" step="1" value="0"></label>
+        </div>
+
+        <label>Зелёные слова
+            <textarea id="greenWords" rows="3" placeholder="курица, сыр, творог"></textarea>
+        </label>
+
+        <label>Красные слова
+            <textarea id="redWords" rows="3" placeholder="тыква, печень, оливки"></textarea>
+        </label>
+
+        <label class="checkbox"><input id="hideUnsuitable" type="checkbox" checked>Скрывать неподходящие карточки</label>
+    </section>
+
+    <section class="summary">
+        <div><strong id="totalCount">0</strong><span>собрано</span></div>
+        <div><strong id="suitableCount">0</strong><span>подходит</span></div>
+        <div><strong id="hiddenCount">0</strong><span>отсеяно</span></div>
+    </section>
+
+    <section class="toolbar">
+        <select id="sortMode">
+            <option value="score">По выгодности</option>
+            <option value="discount">По скидке</option>
+            <option value="priceAsc">Сначала дешёвые</option>
+            <option value="priceDesc">Сначала дорогие</option>
+        </select>
+        <button id="exportButton">CSV</button>
+    </section>
+
+    <main id="productList"></main>
+    <script src="sidepanel.js"></script>
+</body>
+</html>
