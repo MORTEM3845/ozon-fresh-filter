@@ -1,34 +1,274 @@
-:root { color-scheme: light dark; font-family: Inter, Segoe UI, Arial, sans-serif; }
-* { box-sizing: border-box; }
-body { margin: 0; padding: 12px; background: Canvas; color: CanvasText; }
-header { margin-bottom: 12px; }
-h1 { margin: 0 0 6px; font-size: 20px; }
-h2 { margin: 0 0 10px; font-size: 15px; }
-.status { min-height: 18px; color: GrayText; font-size: 12px; }
-.actions, .toolbar { display: flex; gap: 7px; margin-bottom: 12px; }
-button, select, input, textarea { font: inherit; }
-button { padding: 8px 10px; border: 1px solid color-mix(in srgb, CanvasText 20%, transparent); border-radius: 8px; background: ButtonFace; color: ButtonText; cursor: pointer; }
-button:disabled { opacity: .5; cursor: default; }
-button.primary { flex: 1; background: #005bff; color: white; border-color: #005bff; }
-.filters { padding: 11px; margin-bottom: 12px; border: 1px solid color-mix(in srgb, CanvasText 15%, transparent); border-radius: 10px; }
-.filters label { display: block; margin-bottom: 9px; font-size: 12px; }
-.filters input[type="number"], .filters textarea { width: 100%; margin-top: 4px; padding: 7px 8px; border: 1px solid color-mix(in srgb, CanvasText 20%, transparent); border-radius: 7px; background: Field; color: FieldText; }
-.filters textarea { resize: vertical; }
-.row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.checkbox { display: flex !important; align-items: center; gap: 7px; margin-bottom: 0 !important; }
-.summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 12px; }
-.summary div { padding: 8px 5px; border-radius: 9px; background: color-mix(in srgb, CanvasText 7%, transparent); text-align: center; }
-.summary strong, .summary span { display: block; }
-.summary strong { font-size: 18px; }
-.summary span { color: GrayText; font-size: 11px; }
-.toolbar select { flex: 1; padding: 7px; border-radius: 8px; }
-#productList { display: grid; gap: 8px; }
-.product { display: grid; grid-template-columns: 58px 1fr; gap: 9px; padding: 8px; border: 1px solid color-mix(in srgb, CanvasText 15%, transparent); border-radius: 10px; cursor: pointer; }
-.product.unsuitable { opacity: .55; }
-.product img { width: 58px; height: 58px; object-fit: cover; border-radius: 8px; background: color-mix(in srgb, CanvasText 7%, transparent); }
-.product-title { margin-bottom: 4px; font-size: 12px; line-height: 1.25; }
-.product-meta { display: flex; flex-wrap: wrap; gap: 5px 8px; font-size: 12px; }
-.price { font-weight: 700; }
-.discount { color: #169c50; font-weight: 700; }
-.reason { margin-top: 5px; color: #c73d3d; font-size: 11px; }
-.empty { padding: 25px 8px; color: GrayText; text-align: center; }
+:root {
+    color-scheme: dark;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 12px;
+    background: #111;
+    color: #eee;
+}
+
+header {
+    margin-bottom: 12px;
+}
+
+h1 {
+    margin: 0 0 5px;
+    font-size: 20px;
+}
+
+h2 {
+    margin: 0 0 10px;
+    font-size: 15px;
+}
+
+.status {
+    min-height: 18px;
+    color: #aaa;
+    font-size: 12px;
+}
+
+.status.error {
+    color: #ff7272;
+}
+
+.status.success {
+    color: #55d986;
+}
+
+.actions,
+.toolbar {
+    display: flex;
+    gap: 7px;
+    margin-bottom: 12px;
+}
+
+button,
+select,
+input,
+textarea {
+    font: inherit;
+}
+
+button {
+    padding: 8px 10px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background: #333;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+    background: #444;
+}
+
+button:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+button.primary {
+    flex: 1;
+    border-color: #0766ff;
+    background: #0766ff;
+}
+
+.filters,
+.diagnostics {
+    padding: 11px;
+    margin-bottom: 12px;
+    border: 1px solid #3d3d3d;
+    border-radius: 10px;
+    background: #191919;
+}
+
+.filters label {
+    display: block;
+    margin-bottom: 9px;
+    font-size: 12px;
+}
+
+.filters input[type="number"],
+.filters textarea {
+    width: 100%;
+    margin-top: 4px;
+    padding: 7px 8px;
+    border: 1px solid #555;
+    border-radius: 7px;
+    background: #282828;
+    color: white;
+}
+
+.filters textarea {
+    resize: vertical;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.checkbox {
+    display: flex !important;
+    align-items: center;
+    gap: 7px;
+}
+
+details summary {
+    color: #bbb;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.advanced-checkbox {
+    margin-top: 12px;
+}
+
+.advanced-row {
+    margin-top: 8px;
+}
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.summary div {
+    padding: 8px 4px;
+    border-radius: 9px;
+    background: #242424;
+    text-align: center;
+}
+
+.summary strong,
+.summary span {
+    display: block;
+}
+
+.summary strong {
+    font-size: 17px;
+}
+
+.summary span {
+    color: #999;
+    font-size: 10px;
+}
+
+.toolbar select {
+    flex: 1;
+    padding: 7px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background: #282828;
+    color: white;
+}
+
+.diagnostic-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 7px;
+    font-size: 11px;
+}
+
+.selected-url {
+    margin-top: 9px;
+    color: #888;
+    font-size: 10px;
+    overflow-wrap: anywhere;
+}
+
+#productList {
+    display: grid;
+    gap: 8px;
+}
+
+.product {
+    display: grid;
+    grid-template-columns: 68px 1fr;
+    gap: 9px;
+    padding: 8px;
+    border: 1px solid #373737;
+    border-radius: 10px;
+    background: #191919;
+    cursor: pointer;
+}
+
+.product:hover {
+    border-color: #666;
+}
+
+.product.unsuitable {
+    opacity: .5;
+}
+
+.product img {
+    width: 68px;
+    height: 68px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #252525;
+}
+
+.product-title {
+    margin-bottom: 5px;
+    font-size: 12px;
+    line-height: 1.3;
+}
+
+.product-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 8px;
+    align-items: baseline;
+    font-size: 12px;
+}
+
+.price {
+    font-weight: 700;
+}
+
+.old-price {
+    color: #999;
+    text-decoration: line-through;
+}
+
+.discount {
+    color: #55d986;
+    font-weight: 700;
+}
+
+.source {
+    padding: 2px 5px;
+    border-radius: 5px;
+    background: #292929;
+    color: #999;
+    font-size: 9px;
+}
+
+.reason {
+    margin-top: 5px;
+    color: #ff7272;
+    font-size: 11px;
+}
+
+.green-match {
+    margin-top: 5px;
+    color: #55d986;
+    font-size: 11px;
+}
+
+.empty {
+    padding: 28px 8px;
+    color: #999;
+    text-align: center;
+}
