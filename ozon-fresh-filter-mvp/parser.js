@@ -31,13 +31,9 @@
     }
 
     function parseDecimal(value) {
-        const match = String(value ?? "").replace(/\u00a0/g, " ").match(/-?\d+(?:[.,]\d+)?/);
-
-        if (!match)
-            return null;
-
-        const number = Number(match[0].replace(",", "."));
-        return Number.isFinite(number) ? number : null;
+        const normalized = String(value || "").replace(/,/g, ".");
+        const match = normalized.match(/\d+(?:\.\d+)?/);
+        return match ? Number(match[0]) : null;
     }
 
     function parseJson(value) {
@@ -150,166 +146,6 @@
         return /съешьте\s+скорее|успейте\s+съесть|короткий\s+срок\s+годности/i.test(String(value || ""));
     }
 
-
-    function validNutritionValue(value, max) {
-        return Number.isFinite(value) && value >= 0 && value <= max ? value : null;
-    }
-
-    function assignNutritionValue(result, key, value) {
-        const max = key === "calories" ? 5000 : 1000;
-        const parsed = validNutritionValue(parseDecimal(value), max);
-
-        if (parsed != null && result[key] == null)
-            result[key] = parsed;
-    }
-
-    function nutritionKey(value) {
-        const key = normalizeText(value).toLocaleLowerCase("ru-RU").replace(/[\s_\-.,:()]/g, "");
-
-        if (/^(?:protein|proteins|белки|белков|белок)$/.test(key))
-            return "proteins";
-
-        if (/^(?:fat|fats|жиры|жиров|жир)$/.test(key))
-            return "fats";
-
-        if (/^(?:carb|carbs|carbohydrate|carbohydrates|углеводы|углеводов|углевод)$/.test(key))
-            return "carbs";
-
-        if (/^(?:calorie|calories|kcal|ккал|калорийность|энергетическаяценность)$/.test(key))
-            return "calories";
-
-        return "";
-    }
-
-    function extractNutritionFromObjects(node, result, depth = 0) {
-        if (!node || depth > 9)
-            return;
-
-        if (Array.isArray(node)) {
-            for (const value of node)
-                extractNutritionFromObjects(value, result, depth + 1);
-
-            return;
-        }
-
-        if (typeof node !== "object")
-            return;
-
-        const label = node.name ?? node.title ?? node.label ?? node.key ?? node.parameter ?? node.characteristic;
-        const value = node.value ?? node.values ?? node.description ?? node.subtitle ?? node.content;
-        const labeledKey = nutritionKey(label);
-
-        if (labeledKey && value != null)
-            assignNutritionValue(result, labeledKey, Array.isArray(value) ? value.join(" ") : value);
-
-        for (const [key, nestedValue] of Object.entries(node)) {
-            const directKey = nutritionKey(key);
-
-            if (directKey && (typeof nestedValue === "string" || typeof nestedValue === "number"))
-                assignNutritionValue(result, directKey, nestedValue);
-
-            if (typeof nestedValue === "object")
-                extractNutritionFromObjects(nestedValue, result, depth + 1);
-        }
-    }
-
-    function extractNutritionValue(texts, labelPattern, max) {
-        const unit = "(?:г|гр|g)?";
-        const separator = "(?:\\s*[,;]?\\s*" + unit + "\\s*)?(?:[:=—–-]|\\|)?\\s*";
-        const direct = new RegExp("(?:" + labelPattern + ")" + separator + "(\\d+(?:[.,]\\d+)?)", "i");
-        const reverse = new RegExp("(\\d+(?:[.,]\\d+)?)\\s*(?:г|гр|g)\\s*(?:" + labelPattern + ")", "i");
-
-        for (const text of texts) {
-            const match = text.match(direct) || text.match(reverse);
-            const parsed = match ? validNutritionValue(parseDecimal(match[1]), max) : null;
-
-            if (parsed != null)
-                return parsed;
-        }
-
-        const exactLabel = new RegExp("^(?:" + labelPattern + ")(?:\\s*[,;]?\\s*(?:г|гр|g|ккал|kcal))?$", "i");
-
-        for (let index = 0; index < texts.length - 1; index++) {
-            if (!exactLabel.test(texts[index]))
-                continue;
-
-            for (const nearby of texts.slice(index + 1, index + 3)) {
-                const parsed = validNutritionValue(parseDecimal(nearby), max);
-
-                if (parsed != null)
-                    return parsed;
-            }
-        }
-
-        return null;
-    }
-
-    function extractCalories(texts) {
-        const patterns = [
-            /(?:калорийность|энергетическая\s+ценность)(?:\s*[,;:]?\s*(?:ккал|kcal)(?:\s*\/\s*100\s*(?:г|мл))?)?\s*(?:[:=—–-]|\|)?\s*(\d+(?:[.,]\d+)?)/i,
-            /(\d+(?:[.,]\d+)?)\s*(?:ккал|kcal)\b/i
-        ];
-
-        for (const text of texts) {
-            for (const pattern of patterns) {
-                const match = text.match(pattern);
-                const parsed = match ? validNutritionValue(parseDecimal(match[1]), 5000) : null;
-
-                if (parsed != null)
-                    return parsed;
-            }
-        }
-
-        for (let index = 0; index < texts.length - 1; index++) {
-            if (!/^(?:калорийность|энергетическая\s+ценность)(?:\s*[,;]?\s*(?:ккал|kcal))?$/i.test(texts[index]))
-                continue;
-
-            const parsed = validNutritionValue(parseDecimal(texts[index + 1]), 5000);
-
-            if (parsed != null)
-                return parsed;
-        }
-
-        return null;
-    }
-
-    function extractNutrition(node) {
-        const result = { proteins: null, fats: null, carbs: null, calories: null, basis: "" };
-        extractNutritionFromObjects(node, result);
-
-        const texts = [];
-        collectTexts(node, texts);
-        const normalizedTexts = texts.map(normalizeText).filter(Boolean);
-
-        if (result.proteins == null)
-            result.proteins = extractNutritionValue(normalizedTexts, "белк(?:и|ов|а)?|proteins?", 1000);
-
-        if (result.fats == null)
-            result.fats = extractNutritionValue(normalizedTexts, "жир(?:ы|ов|а)?|fats?", 1000);
-
-        if (result.carbs == null)
-            result.carbs = extractNutritionValue(normalizedTexts, "углевод(?:ы|ов|а)?|carbohydrates?|carbs?", 1000);
-
-        if (result.calories == null)
-            result.calories = extractCalories(normalizedTexts);
-
-        const basisText = normalizedTexts.find(text => /на\s*100\s*(?:г|мл)|100\s*(?:г|мл)/i.test(text)) || "";
-
-        if (/100\s*мл/i.test(basisText))
-            result.basis = "100 мл";
-        else if (/100\s*г/i.test(basisText))
-            result.basis = "100 г";
-        else if (normalizedTexts.some(text => /на\s+порци(?:ю|и)/i.test(text)))
-            result.basis = "порция";
-
-        return Object.values(result).some((value, index) => index < 4 && value != null) ? result : null;
-    }
-
-    function parseProductDetails(value) {
-        const response = parseJson(value);
-        return response ? { validJson: true, nutrition: extractNutrition(response) } : { validJson: false, nutrition: null };
-    }
-
     function extractEatSoon(item) {
         const texts = [];
         collectTexts(item, texts);
@@ -387,6 +223,55 @@
         return "Другое";
     }
 
+    function extractWeightGrams(value) {
+        const text = normalizeText(value).toLocaleLowerCase("ru-RU");
+
+        if (!text)
+            return null;
+
+        const kgMatch = text.match(/(\d+(?:[.,]\d+)?)\s*кг\b/);
+
+        if (kgMatch)
+            return Math.round(parseDecimal(kgMatch[1]) * 1000);
+
+        const gramMatch = text.match(/(\d+(?:[.,]\d+)?)\s*(?:г|гр)\b/);
+
+        if (gramMatch)
+            return Math.round(parseDecimal(gramMatch[1]));
+
+        return null;
+    }
+
+    function normalizeNutrition(details) {
+        if (!details || typeof details !== "object")
+            return null;
+
+        const result = {
+            protein: parseDecimal(details.protein),
+            fat: parseDecimal(details.fat),
+            carbs: parseDecimal(details.carbs),
+            calories: parseDecimal(details.calories)
+        };
+
+        return Object.values(result).some(x => Number.isFinite(x)) ? result : null;
+    }
+
+    function extractNutritionFromText(value) {
+        const text = normalizeText(value);
+
+        if (!text)
+            return null;
+
+        const result = {
+            protein: parseDecimal(text.match(/белк[аи]?[^\d]{0,24}(\d+(?:[.,]\d+)?)/i)?.[1]),
+            fat: parseDecimal(text.match(/жир[аы]?[^\d]{0,24}(\d+(?:[.,]\d+)?)/i)?.[1]),
+            carbs: parseDecimal(text.match(/углевод[аыов]*[^\d]{0,24}(\d+(?:[.,]\d+)?)/i)?.[1]),
+            calories: parseDecimal(text.match(/(?:калори(?:йность|и)|ккал|энергетическ(?:ая|ой)\s+ценност[ьи])[^\d]{0,24}(\d+(?:[.,]\d+)?)/i)?.[1])
+        };
+
+        return Object.values(result).some(x => Number.isFinite(x)) ? result : null;
+    }
+
     function parseProduct(item) {
         if (!item || typeof item !== "object")
             return null;
@@ -409,7 +294,7 @@
         const { rating, reviewCount } = extractRating(item);
         const ozonCategory = extractOzonCategory(item);
         const classifiedCategory = classifyProductCategory(title);
-        const nutrition = extractNutrition(item);
+        const weightGrams = extractWeightGrams(title);
 
         return {
             id: String(id),
@@ -422,8 +307,9 @@
             category: classifiedCategory !== "Другое" ? classifiedCategory : ozonCategory || "Другое",
             ozonCategory,
             eatSoon: extractEatSoon(item),
-            nutrition,
-            nutritionStatus: nutrition ? "loaded" : "idle",
+            weightGrams,
+            gramsPerRub: weightGrams && price ? Number((weightGrams / price).toFixed(3)) : null,
+            nutrition: null,
             image,
             url
         };
@@ -562,14 +448,16 @@
         parseInteger,
         parseDecimal,
         parseJson,
+        cleanProductUrl,
         parseProduct,
         parseResponse,
-        parseProductDetails,
-        extractNutrition,
         parseInnerUrl,
         getPageIndex,
         extractRatingFromText,
         containsEatSoon,
-        classifyProductCategory
+        classifyProductCategory,
+        extractWeightGrams,
+        extractNutritionFromText,
+        normalizeNutrition
     };
 })();
