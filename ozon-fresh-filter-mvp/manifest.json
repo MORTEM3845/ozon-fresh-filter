@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Ozon Fresh Filter",
-  "version": "0.6.0",
-  "description": "Собирает товары Ozon Fresh, фильтрует их, показывает рейтинг, категории и БЖУ, добавляет товары в корзину.",
+  "version": "0.7.0",
+  "description": "Собирает товары Ozon Fresh, показывает рейтинг, БЖУ, граммы за рубль и добавляет товары в корзину.",
   "permissions": [
     "storage",
     "sidePanel",
