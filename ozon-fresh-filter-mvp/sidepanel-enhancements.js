@@ -53,18 +53,29 @@
             (nutrition || meta)?.insertAdjacentElement("afterend", metrics);
         }
 
-        metrics.replaceChildren();
+        const weightText = `${weightGrams.toLocaleString("ru-RU")} г`;
+        const ratioText = `${gramsPerRub.toFixed(2)} г/₽`;
+        let weight = metrics.querySelector(":scope > .weight-item");
+        let ratio = metrics.querySelector(":scope > .grams-per-ruble");
 
-        const weight = document.createElement("span");
-        weight.className = "weight-item";
-        weight.textContent = `${weightGrams.toLocaleString("ru-RU")} г`;
-        weight.title = "Вес товара из названия";
+        if (!weight) {
+            weight = document.createElement("span");
+            weight.className = "weight-item";
+            weight.title = "Вес товара из названия";
+            metrics.appendChild(weight);
+        }
 
-        const ratio = document.createElement("span");
-        ratio.className = "grams-per-ruble";
-        ratio.textContent = `${gramsPerRub.toFixed(2)} г/₽`;
+        if (!ratio) {
+            ratio = document.createElement("span");
+            ratio.className = "grams-per-ruble";
+            metrics.appendChild(ratio);
+        }
 
-        metrics.append(weight, ratio);
+        if (weight.textContent !== weightText)
+            weight.textContent = weightText;
+
+        if (ratio.textContent !== ratioText)
+            ratio.textContent = ratioText;
     }
 
     function colorize(cards) {
@@ -86,8 +97,14 @@
             const position = max > min ? (value - min) / (max - min) : 1;
             const hue = Math.round(position * 120);
             const label = position >= .75 ? "очень выгодно" : position >= .4 ? "средне" : "не очень выгодно";
-            badge.style.background = `hsl(${hue} 68% 36%)`;
-            badge.title = `${value.toFixed(2)} грамма за 1 ₽ — ${label} относительно показанных товаров`;
+            const background = `hsl(${hue} 68% 36%)`;
+            const title = `${value.toFixed(2)} грамма за 1 ₽ — ${label} относительно показанных товаров`;
+
+            if (badge.style.background !== background)
+                badge.style.background = background;
+
+            if (badge.title !== title)
+                badge.title = title;
         }
     }
 
@@ -95,9 +112,13 @@
         if (sortMode.value !== "gramsPerRub")
             return;
 
-        cards.sort((a, b) => (Number(b.dataset.gramsPerRub) || -1) - (Number(a.dataset.gramsPerRub) || -1));
+        const sorted = [...cards].sort((a, b) => (Number(b.dataset.gramsPerRub) || -1) - (Number(a.dataset.gramsPerRub) || -1));
+        const alreadySorted = sorted.every((card, index) => card === cards[index]);
 
-        for (const card of cards)
+        if (alreadySorted)
+            return;
+
+        for (const card of sorted)
             productList.appendChild(card);
     }
 
