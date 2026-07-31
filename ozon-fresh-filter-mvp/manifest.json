@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ozon Fresh Filter",
   "version": "0.7.0",
-  "description": "Собирает товары Ozon Fresh, показывает рейтинг, БЖУ, граммы за рубль и добавляет товары в корзину.",
+  "description": "Собирает товары Ozon Fresh, показывает рейтинг, БЖУ, вес и граммы за рубль, добавляет товары в корзину.",
   "permissions": [
     "storage",
     "sidePanel",
@@ -34,6 +34,7 @@
       ],
       "js": [
         "parser.js",
+        "parser-compat.js",
         "bridge.js"
       ],
       "run_at": "document_start",
