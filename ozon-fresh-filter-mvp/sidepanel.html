@@ -22,119 +22,73 @@
         <h2>Фильтры</h2>
 
         <div class="row">
-            <label>
-                Цена до, ₽
-                <input id="maxPrice" type="number" min="0" step="10" placeholder="без лимита">
-            </label>
-
-            <label>
-                Скидка от, %
-                <input id="minDiscount" type="number" min="0" max="99" value="0">
-            </label>
+            <label>Цена до, ₽ <input id="maxPrice" type="number" min="0" step="10" placeholder="без лимита"></label>
+            <label>Скидка от, % <input id="minDiscount" type="number" min="0" max="99" value="0"></label>
         </div>
 
-        <label>
-            Зелёные слова
-            <textarea id="greenWords" rows="3"
-                      placeholder="курица, сыр, творог"></textarea>
-        </label>
+        <div class="row">
+            <label>Рейтинг от <input id="minRating" type="number" min="0" max="5" step="0.1" placeholder="любой"></label>
+            <label>Отзывов от <input id="minReviews" type="number" min="0" step="1" placeholder="любое число"></label>
+        </div>
 
-        <label>
-            Красные слова
-            <textarea id="redWords" rows="3"
-                      placeholder="тыква, печень, оливки"></textarea>
-        </label>
+        <label>Зелёные слова <textarea id="greenWords" rows="3" placeholder="курица, сыр, творог"></textarea></label>
+        <label>Красные слова <textarea id="redWords" rows="3" placeholder="тыква, печень, оливки"></textarea></label>
 
-        <label class="checkbox">
-            <input id="hideUnsuitable" type="checkbox" checked>
-            Не показывать неподходящие товары
-        </label>
+        <div class="category-filter">
+            <div class="category-filter-title">
+                <span>Исключить категории</span>
+                <small>нажми на ненужные</small>
+            </div>
+            <div id="categoryChips" class="category-chips">
+                <span class="category-placeholder">Появятся после сбора товаров</span>
+            </div>
+        </div>
+
+        <label class="checkbox"><input id="hideUnsuitable" type="checkbox" checked>Не показывать неподходящие товары</label>
 
         <details>
             <summary>Настройки сбора</summary>
-
-            <label class="checkbox advanced-checkbox">
-                <input id="includeDomPage" type="checkbox" checked>
-                Добавлять первую видимую страницу
-            </label>
+            <label class="checkbox advanced-checkbox"><input id="includeDomPage" type="checkbox" checked>Добавлять первую видимую страницу</label>
 
             <div class="row advanced-row">
-                <label>
-                    Максимум API-страниц
-                    <input id="pageLimit" type="number" min="1" max="200" value="100">
-                </label>
-
-                <label>
-                    Ожидание скролла, мс
-                    <input id="scrollWaitMs" type="number" min="500" max="10000"
-                           step="250" value="2500">
-                </label>
+                <label>Максимум API-страниц <input id="pageLimit" type="number" min="1" max="200" value="100"></label>
+                <label>Ожидание скролла, мс <input id="scrollWaitMs" type="number" min="500" max="10000" step="250" value="2500"></label>
             </div>
         </details>
     </section>
 
     <section class="summary">
-        <div>
-            <strong id="totalCount">0</strong>
-            <span>получено</span>
-        </div>
-
-        <div>
-            <strong id="suitableCount">0</strong>
-            <span>подходит</span>
-        </div>
-
-        <div>
-            <strong id="hiddenCount">0</strong>
-            <span>отсеяно</span>
-        </div>
-
-        <div>
-            <strong id="pagesCount">0</strong>
-            <span>API-страниц</span>
-        </div>
+        <div><strong id="totalCount">0</strong><span>получено</span></div>
+        <div><strong id="suitableCount">0</strong><span>подходит</span></div>
+        <div><strong id="hiddenCount">0</strong><span>отсеяно</span></div>
+        <div><strong id="pagesCount">0</strong><span>API-страниц</span></div>
     </section>
 
     <section class="toolbar">
         <select id="sortMode">
             <option value="benefit">По выгодности</option>
             <option value="discount">По скидке</option>
+            <option value="rating">По рейтингу</option>
+            <option value="reviews">По отзывам</option>
+            <option value="eatSoon">Сначала «съешьте скорее»</option>
             <option value="priceAsc">Сначала дешёвые</option>
             <option value="priceDesc">Сначала дорогие</option>
             <option value="saving">По экономии в ₽</option>
         </select>
-
+        <button id="nutritionButton" title="Загрузить БЖУ для показанных товаров">БЖУ</button>
         <button id="exportButton">CSV</button>
     </section>
 
     <details class="diagnostics">
         <summary>Диагностика</summary>
-
-        <div class="diagnostic-row">
-            <span>Перехватчик:</span>
-            <strong id="interceptorState">нет</strong>
-        </div>
-
-        <div class="diagnostic-row">
-            <span>API-кандидатов:</span>
-            <strong id="candidateCount">0</strong>
-        </div>
-
-        <div class="diagnostic-row">
-            <span>Из первой страницы:</span>
-            <strong id="domCount">0</strong>
-        </div>
-
-        <div class="diagnostic-row">
-            <span>Из API:</span>
-            <strong id="apiCount">0</strong>
-        </div>
-
+        <div class="diagnostic-row"><span>Перехватчик:</span><strong id="interceptorState">нет</strong></div>
+        <div class="diagnostic-row"><span>API-кандидатов:</span><strong id="candidateCount">0</strong></div>
+        <div class="diagnostic-row"><span>Из первой страницы:</span><strong id="domCount">0</strong></div>
+        <div class="diagnostic-row"><span>Из API:</span><strong id="apiCount">0</strong></div>
         <div id="selectedUrl" class="selected-url"></div>
     </details>
 
     <main id="productList"></main>
-
     <script src="sidepanel.js"></script>
 </body>
 </html>

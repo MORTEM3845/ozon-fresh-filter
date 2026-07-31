@@ -234,6 +234,53 @@
         }
     }
 
+
+    async function fetchProductDetails(command) {
+        const requestId = String(command.requestId || "");
+        const productId = String(command.productId || "");
+
+        try {
+            const productUrl = new URL(command.url, location.origin);
+            productUrl.searchParams.delete("at");
+            productUrl.hash = "";
+
+            const endpoint = new URL(ENTRYPOINT_PART, location.origin);
+            endpoint.searchParams.set("url", `${productUrl.pathname}${productUrl.search}`);
+
+            const response = await originalFetch(endpoint.href, {
+                method: "GET",
+                credentials: "include",
+                cache: "no-store",
+                headers: {
+                    accept: "application/json"
+                }
+            });
+
+            const text = await response.text();
+
+            post({
+                kind: "product-details-response",
+                source: "product-details",
+                requestId,
+                productId,
+                url: endpoint.href,
+                status: response.status,
+                ok: response.ok,
+                body: text.slice(0, MAX_BODY_LENGTH),
+                bodyLength: text.length,
+                truncated: text.length > MAX_BODY_LENGTH
+            });
+        } catch (error) {
+            post({
+                kind: "product-details-error",
+                source: "product-details",
+                requestId,
+                productId,
+                message: error?.message || String(error)
+            });
+        }
+    }
+
     async function technicalScroll(waitMs) {
         const startY = window.scrollY;
         const oldBehavior = document.documentElement.style.scrollBehavior;
@@ -375,6 +422,8 @@
             technicalScroll(Number(command.waitMs) || 2500);
         } else if (command.name === "fetch-captured-url") {
             fetchCapturedUrl(command.url);
+        } else if (command.name === "fetch-product-details") {
+            fetchProductDetails(command);
         } else if (command.name === "start-chain") {
             startChain(
                 command.firstPageUrl,

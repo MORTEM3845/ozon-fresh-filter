@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Ozon Fresh Filter",
-  "version": "0.4.0",
-  "description": "Автоматически получает товары Ozon через внутреннюю пагинацию и фильтрует их по цене, скидке и словам.",
+  "version": "0.6.0",
+  "description": "Собирает товары Ozon Fresh, фильтрует их, показывает рейтинг, категории и БЖУ, добавляет товары в корзину.",
   "permissions": [
     "storage",
     "sidePanel",

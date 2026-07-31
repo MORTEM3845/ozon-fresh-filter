@@ -12,6 +12,7 @@ body {
     padding: 12px;
     background: #111;
     color: #eee;
+    font-size: 14px;
 }
 
 header {
@@ -20,18 +21,18 @@ header {
 
 h1 {
     margin: 0 0 5px;
-    font-size: 20px;
+    font-size: 21px;
 }
 
 h2 {
     margin: 0 0 10px;
-    font-size: 15px;
+    font-size: 16px;
 }
 
 .status {
-    min-height: 18px;
+    min-height: 19px;
     color: #aaa;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .status.error {
@@ -92,7 +93,7 @@ button.primary {
 .filters label {
     display: block;
     margin-bottom: 9px;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .filters input[type="number"],
@@ -122,9 +123,54 @@ button.primary {
     gap: 7px;
 }
 
+.category-filter {
+    margin: 2px 0 11px;
+}
+
+.category-filter-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 7px;
+    font-size: 13px;
+}
+
+.category-filter-title small {
+    color: #888;
+    font-size: 11px;
+}
+
+.category-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.category-chip {
+    padding: 5px 8px;
+    border-color: #4a4a4a;
+    border-radius: 999px;
+    background: #292929;
+    color: #ddd;
+    font-size: 11px;
+}
+
+.category-chip.excluded {
+    border-color: #a94343;
+    background: #532525;
+    color: #ffb4b4;
+    text-decoration: line-through;
+}
+
+.category-placeholder {
+    color: #777;
+    font-size: 12px;
+}
+
 details summary {
     color: #bbb;
-    font-size: 12px;
+    font-size: 13px;
     cursor: pointer;
 }
 
@@ -156,16 +202,17 @@ details summary {
 }
 
 .summary strong {
-    font-size: 17px;
+    font-size: 18px;
 }
 
 .summary span {
     color: #999;
-    font-size: 10px;
+    font-size: 11px;
 }
 
 .toolbar select {
     flex: 1;
+    min-width: 0;
     padding: 7px;
     border: 1px solid #555;
     border-radius: 8px;
@@ -177,13 +224,13 @@ details summary {
     display: flex;
     justify-content: space-between;
     margin-top: 7px;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .selected-url {
     margin-top: 9px;
     color: #888;
-    font-size: 10px;
+    font-size: 11px;
     overflow-wrap: anywhere;
 }
 
@@ -194,7 +241,7 @@ details summary {
 
 .product {
     display: grid;
-    grid-template-columns: 68px 1fr;
+    grid-template-columns: 68px minmax(0, 1fr);
     gap: 9px;
     padding: 8px;
     border: 1px solid #373737;
@@ -219,9 +266,13 @@ details summary {
     background: #252525;
 }
 
+.product-body {
+    min-width: 0;
+}
+
 .product-title {
     margin-bottom: 5px;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.3;
 }
 
@@ -229,8 +280,8 @@ details summary {
     display: flex;
     flex-wrap: wrap;
     gap: 5px 8px;
-    align-items: baseline;
-    font-size: 12px;
+    align-items: center;
+    font-size: 13px;
 }
 
 .price {
@@ -247,28 +298,115 @@ details summary {
     font-weight: 700;
 }
 
+.rating {
+    color: #f2cf66;
+    font-variant-numeric: tabular-nums;
+}
+
+.eat-soon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid #a83c3c;
+    border-radius: 50%;
+    background: #5a2222;
+    color: #ff9b9b;
+    font-size: 13px;
+    line-height: 1;
+    animation: eat-soon-pulse 1.8s ease-in-out infinite;
+}
+
+.product-category,
 .source {
-    padding: 2px 5px;
+    padding: 2px 6px;
     border-radius: 5px;
     background: #292929;
-    color: #999;
-    font-size: 9px;
+    color: #aaa;
+    font-size: 10px;
+}
+
+.product-category {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .reason {
     margin-top: 5px;
     color: #ff7272;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .green-match {
     margin-top: 5px;
     color: #55d986;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .empty {
     padding: 28px 8px;
     color: #999;
     text-align: center;
+}
+
+@keyframes eat-soon-pulse {
+    0%, 100% { opacity: .75; transform: scale(.96); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+.nutrition {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 7px;
+    color: #cfd4dc;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.nutrition.loading {
+    color: #888;
+}
+
+.nutrition-item {
+    padding: 2px 6px;
+    border: 1px solid #3f4650;
+    border-radius: 5px;
+    background: #222831;
+}
+
+.nutrition-item.calories {
+    color: #f2cf66;
+}
+
+.product-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 7px;
+}
+
+.cart-button {
+    min-width: 96px;
+    padding: 6px 10px;
+    border-color: #0766ff;
+    background: #0766ff;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.cart-button:hover:not(:disabled) {
+    background: #2679ff;
+}
+
+.cart-button.success {
+    border-color: #2f9d59;
+    background: #236b40;
+}
+
+.cart-button.error {
+    border-color: #a94343;
+    background: #6e2c2c;
 }

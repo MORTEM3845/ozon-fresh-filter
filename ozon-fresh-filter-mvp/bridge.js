@@ -22,6 +22,12 @@
         domCount: 0,
         apiCount: 0,
         candidateCount: 0,
+        nutritionLoading: false,
+        nutritionTotal: 0,
+        nutritionProcessed: 0,
+        nutritionFound: 0,
+        nutritionMissing: 0,
+        nutritionErrors: 0,
 
         selectedCandidateUrl: "",
         lastError: "",
@@ -29,8 +35,11 @@
         rules: {
             maxPrice: 0,
             minDiscount: 0,
+            minRating: 0,
+            minReviews: 0,
             greenWords: [],
             redWords: [],
+            excludedCategories: [],
             hideUnsuitable: true,
             includeDomPage: true,
             pageLimit: 100,
@@ -39,6 +48,9 @@
     };
 
     let scrollFinishedAt = 0;
+    let nutritionGeneration = 0;
+    let productDetailsSequence = 0;
+    const productDetailsRequests = new Map();
 
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -70,6 +82,12 @@
             : [];
     }
 
+    function normalizeCategories(value) {
+        return Array.isArray(value)
+            ? [...new Set(value.map(x => Parser.normalizeText(x)).filter(Boolean))]
+            : [];
+    }
+
     function mergeProducts(products, source) {
         let added = 0;
 
@@ -82,11 +100,18 @@
             if (!previous)
                 added++;
 
-            state.products.set(product.id, {
+            const merged = {
                 ...previous,
                 ...product,
                 source: previous?.source === "api" ? "api" : source
-            });
+            };
+
+            if (!product.nutrition && previous?.nutrition) {
+                merged.nutrition = previous.nutrition;
+                merged.nutritionStatus = previous.nutritionStatus;
+            }
+
+            state.products.set(product.id, merged);
         }
 
         return added;
@@ -113,6 +138,15 @@
         if (state.rules.minDiscount > 0 && product.discount < state.rules.minDiscount)
             reasons.push(`скидка ${product.discount}% меньше ${state.rules.minDiscount}%`);
 
+        if (state.rules.minRating > 0 && (product.rating || 0) < state.rules.minRating)
+            reasons.push(`рейтинг ${product.rating || 0} ниже ${state.rules.minRating}`);
+
+        if (state.rules.minReviews > 0 && (product.reviewCount || 0) < state.rules.minReviews)
+            reasons.push(`отзывов ${product.reviewCount || 0} меньше ${state.rules.minReviews}`);
+
+        if (state.rules.excludedCategories.includes(product.category))
+            reasons.push(`исключена категория «${product.category}»`);
+
         if (redMatches.length)
             reasons.push(`красные слова: ${redMatches.join(", ")}`);
 
@@ -120,9 +154,13 @@
             ? product.oldPrice - product.price
             : 0;
 
+        const ratingScore = (product.rating || 0) * 8;
+        const reviewsScore = Math.log10((product.reviewCount || 0) + 1) * 12;
+
         return {
             suitable: reasons.length === 0,
-            score: product.discount * 10 + greenMatches.length * 100 - product.price / 100,
+            score: product.discount * 10 + greenMatches.length * 100 + ratingScore + reviewsScore +
+                (product.eatSoon ? 25 : 0) - product.price / 100,
             saving,
             reasons,
             greenMatches,
@@ -146,6 +184,12 @@
             domCount: state.domCount,
             apiCount: state.apiCount,
             candidateCount: state.candidates.size,
+            nutritionLoading: state.nutritionLoading,
+            nutritionTotal: state.nutritionTotal,
+            nutritionProcessed: state.nutritionProcessed,
+            nutritionFound: state.nutritionFound,
+            nutritionMissing: state.nutritionMissing,
+            nutritionErrors: state.nutritionErrors,
             selectedCandidateUrl: state.selectedCandidateUrl,
             interceptorReady: state.interceptorReady,
             lastError: state.lastError,
@@ -384,14 +428,23 @@
             url.searchParams.delete("at");
             url.hash = "";
 
+            const title = titleCandidates[0] || `Товар ${idMatch[1]}`;
+            const { rating, reviewCount } = Parser.extractRatingFromText(rawText);
+            const nutrition = Parser.extractNutrition(rawText);
+
             return {
                 id: idMatch[1],
-                title: titleCandidates[0] || `Товар ${idMatch[1]}`,
+                title,
                 price,
                 oldPrice,
                 discount,
-                rating: null,
-                reviewCount: 0,
+                rating,
+                reviewCount,
+                category: Parser.classifyProductCategory(title),
+                ozonCategory: "",
+                eatSoon: Parser.containsEatSoon(rawText),
+                nutrition,
+                nutritionStatus: nutrition ? "loaded" : "idle",
                 image: root.querySelector("img")?.src || "",
                 url: url.toString()
             };
@@ -418,6 +471,210 @@
         return [...products.values()];
     }
 
+
+    function requestProductDetails(product) {
+        return new Promise((resolve, reject) => {
+            const requestId = `${Date.now()}-${++productDetailsSequence}`;
+            const timeoutId = setTimeout(() => {
+                productDetailsRequests.delete(requestId);
+                reject(new Error("Ozon не ответил на запрос БЖУ"));
+            }, 20000);
+
+            productDetailsRequests.set(requestId, {
+                resolve: event => {
+                    clearTimeout(timeoutId);
+                    resolve(event);
+                },
+                reject: error => {
+                    clearTimeout(timeoutId);
+                    reject(error);
+                }
+            });
+
+            sendPageCommand({
+                name: "fetch-product-details",
+                requestId,
+                productId: product.id,
+                url: product.url
+            });
+        });
+    }
+
+    async function enrichProductNutrition(product, generation) {
+        if (!product || generation !== nutritionGeneration)
+            return;
+
+        product.nutritionStatus = "loading";
+        publishProgress();
+
+        try {
+            const event = await requestProductDetails(product);
+
+            if (generation !== nutritionGeneration)
+                return;
+
+            if (!event.ok)
+                throw new Error(`Ozon вернул HTTP ${event.status || 0}`);
+
+            const details = Parser.parseProductDetails(event.body);
+
+            if (!details.validJson)
+                throw new Error("Ozon вернул некорректные данные товара");
+
+            if (details.nutrition) {
+                product.nutrition = details.nutrition;
+                product.nutritionStatus = "loaded";
+                state.nutritionFound++;
+            } else {
+                product.nutritionStatus = "missing";
+                state.nutritionMissing++;
+            }
+        } catch (error) {
+            if (generation !== nutritionGeneration)
+                return;
+
+            product.nutritionStatus = "error";
+            product.nutritionError = error?.message || String(error);
+            state.nutritionErrors++;
+        } finally {
+            if (generation === nutritionGeneration) {
+                state.nutritionProcessed++;
+                publishProgress();
+            }
+        }
+    }
+
+    async function loadNutrition(productIds) {
+        if (state.nutritionLoading)
+            return;
+
+        const requestedIds = Array.isArray(productIds) ? new Set(productIds.map(String)) : null;
+        const queue = [...state.products.values()].filter(product =>
+            (!requestedIds || requestedIds.has(product.id)) &&
+            !product.nutrition &&
+            product.nutritionStatus !== "loading" &&
+            product.nutritionStatus !== "missing"
+        );
+
+        if (!queue.length) {
+            publishProgress();
+            return;
+        }
+
+        const generation = ++nutritionGeneration;
+        state.nutritionLoading = true;
+        state.nutritionTotal = queue.length;
+        state.nutritionProcessed = 0;
+        state.nutritionFound = 0;
+        state.nutritionMissing = 0;
+        state.nutritionErrors = 0;
+        publishProgress();
+
+        let index = 0;
+        const worker = async () => {
+            while (generation === nutritionGeneration) {
+                const product = queue[index++];
+
+                if (!product)
+                    return;
+
+                await enrichProductNutrition(product, generation);
+                await delay(150);
+            }
+        };
+
+        try {
+            const workerCount = Math.min(3, queue.length);
+            await Promise.all(Array.from({ length: workerCount }, worker));
+        } finally {
+            if (generation === nutritionGeneration) {
+                state.nutritionLoading = false;
+                publishProgress();
+            }
+        }
+    }
+
+    function productPathMatches(anchor, product) {
+        try {
+            const anchorUrl = new URL(anchor.href, location.origin);
+            const productUrl = new URL(product.url, location.origin);
+            return anchorUrl.pathname === productUrl.pathname || anchorUrl.pathname.includes(`-${product.id}/`);
+        } catch {
+            return false;
+        }
+    }
+
+    function findAddToCartButton(root) {
+        const candidates = root.querySelectorAll('button, [role="button"]');
+
+        for (const element of candidates) {
+            if (element.disabled || element.getAttribute("aria-disabled") === "true")
+                continue;
+
+            const style = getComputedStyle(element);
+
+            if (style.display === "none" || style.visibility === "hidden")
+                continue;
+
+            const text = Parser.normalizeText(element.innerText || element.getAttribute("aria-label") || element.title)
+                .toLocaleLowerCase("ru-RU");
+
+            if (/^(?:в корзину|добавить в корзину|купить)$/.test(text))
+                return element;
+        }
+
+        return null;
+    }
+
+    function findProductAddButton(product) {
+        const productUrl = (() => {
+            try {
+                return new URL(product.url, location.origin);
+            } catch {
+                return null;
+            }
+        })();
+
+        if (productUrl && (location.pathname === productUrl.pathname || location.pathname.includes(`-${product.id}/`))) {
+            const pageButton = findAddToCartButton(document);
+
+            if (pageButton)
+                return pageButton;
+        }
+
+        const grid = findMainGridContainer() || document.body;
+        const anchor = [...document.querySelectorAll('a[href*="/product/"]')]
+            .find(candidate => productPathMatches(candidate, product));
+
+        if (!anchor)
+            return null;
+
+        const root = findCardRoot(anchor, grid) || anchor.parentElement;
+        return root ? findAddToCartButton(root) : null;
+    }
+
+    async function addProductToCart(product, waitMs = 1000) {
+        if (!product?.id || !product?.url)
+            return { ok: false, message: "Некорректные данные товара" };
+
+        const deadline = Date.now() + Math.max(0, Math.min(15000, Number(waitMs) || 0));
+        let button = findProductAddButton(product);
+
+        while (!button && Date.now() < deadline) {
+            await delay(250);
+            button = findProductAddButton(product);
+        }
+
+        if (!button)
+            return { ok: false, message: "Кнопка «В корзину» не найдена на текущей странице" };
+
+        button.scrollIntoView({ block: "center", behavior: "auto" });
+        button.click();
+        await delay(700);
+
+        return { ok: true, method: "ozon-button" };
+    }
+
     async function startScan() {
         if (state.scanning)
             return;
@@ -431,6 +688,7 @@
             return;
         }
 
+        nutritionGeneration++;
         state.products.clear();
         state.candidates.clear();
         state.resourceUrls.clear();
@@ -442,6 +700,12 @@
         state.domCount = 0;
         state.apiCount = 0;
         state.candidateCount = 0;
+        state.nutritionLoading = false;
+        state.nutritionTotal = 0;
+        state.nutritionProcessed = 0;
+        state.nutritionFound = 0;
+        state.nutritionMissing = 0;
+        state.nutritionErrors = 0;
         state.selectedCandidateUrl = "";
         state.lastError = "";
 
@@ -562,6 +826,7 @@
 
     function clearData() {
         stopScan();
+        nutritionGeneration++;
 
         state.products.clear();
         state.candidates.clear();
@@ -573,6 +838,12 @@
         state.domCount = 0;
         state.apiCount = 0;
         state.candidateCount = 0;
+        state.nutritionLoading = false;
+        state.nutritionTotal = 0;
+        state.nutritionProcessed = 0;
+        state.nutritionFound = 0;
+        state.nutritionMissing = 0;
+        state.nutritionErrors = 0;
         state.selectedCandidateUrl = "";
         state.lastError = "";
 
@@ -607,6 +878,22 @@
 
         if (pageEvent.kind === "technical-scroll-finished") {
             scrollFinishedAt = Date.now();
+            return;
+        }
+
+        if (pageEvent.kind === "product-details-response" || pageEvent.kind === "product-details-error") {
+            const request = productDetailsRequests.get(String(pageEvent.requestId || ""));
+
+            if (!request)
+                return;
+
+            productDetailsRequests.delete(String(pageEvent.requestId || ""));
+
+            if (pageEvent.kind === "product-details-error")
+                request.reject(new Error(pageEvent.message || "Ошибка загрузки БЖУ"));
+            else
+                request.resolve(pageEvent);
+
             return;
         }
 
@@ -665,12 +952,32 @@
             return;
         }
 
+        if (message.type === "OZON_FRESH_LOAD_NUTRITION") {
+            loadNutrition(message.payload?.productIds).catch(error => {
+                state.nutritionLoading = false;
+                state.lastError = error?.message || String(error);
+                publishProgress();
+            });
+            sendResponse({ ok: true });
+            return;
+        }
+
+        if (message.type === "OZON_FRESH_ADD_TO_CART") {
+            addProductToCart(message.payload?.product, message.payload?.waitMs)
+                .then(sendResponse)
+                .catch(error => sendResponse({ ok: false, message: error?.message || String(error) }));
+            return true;
+        }
+
         if (message.type === "OZON_FRESH_APPLY_RULES") {
             state.rules = {
                 ...state.rules,
                 ...message.payload,
                 greenWords: normalizeWords(message.payload?.greenWords),
                 redWords: normalizeWords(message.payload?.redWords),
+                excludedCategories: normalizeCategories(message.payload?.excludedCategories),
+                minRating: Math.max(0, Math.min(5, Number(message.payload?.minRating) || 0)),
+                minReviews: Math.max(0, Number(message.payload?.minReviews) || 0),
                 pageLimit: Math.max(
                     1,
                     Math.min(200, Number(message.payload?.pageLimit) || 100)
