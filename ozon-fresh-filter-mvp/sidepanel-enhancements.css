@@ -1,0 +1,49 @@
+#productList { gap: 10px; }
+
+.product {
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px;
+}
+
+.product img {
+    width: 92px;
+    height: 92px;
+    border-radius: 10px;
+}
+
+.product-title {
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.cart-button {
+    min-width: 124px;
+    padding: 11px 16px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.value-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 7px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.weight-item,
+.grams-per-ruble {
+    padding: 3px 8px;
+    border: 1px solid #465066;
+    border-radius: 999px;
+    background: #252c38;
+    color: #d8e6ff;
+}
+
+.grams-per-ruble {
+    border-color: transparent;
+    color: #fff;
+    font-weight: 700;
+}
