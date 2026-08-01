@@ -112,6 +112,10 @@
             return;
 
         const sorted = [...cards].sort((a, b) => (Number(b.dataset.gramsPerRub) || -1) - (Number(a.dataset.gramsPerRub) || -1));
+        const alreadySorted = sorted.every((card, index) => card === cards[index]);
+
+        if (alreadySorted)
+            return;
 
         for (const card of sorted)
             productList.appendChild(card);
