@@ -17,6 +17,32 @@ async function initialize() {
     }
 }
 
+function openPanelForTab(tab) {
+    if (!tab?.id || !isOzonUrl(tab.url))
+        return false;
+
+    const tabId = tab.id;
+
+    // Вызовы запускаются сразу, чтобы Chrome не потерял пользовательский жест.
+    chrome.sidePanel.setOptions({
+        tabId,
+        path: `${PANEL_PATH}?tabId=${tabId}`,
+        enabled: true
+    }).catch(console.error);
+
+    chrome.sidePanel.open({ tabId }).catch(error => {
+        console.error("Не удалось открыть боковую панель", error);
+    });
+
+    return true;
+}
+
+async function getActiveOzonTab() {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs[0] || null;
+    return tab && isOzonUrl(tab.url) ? tab : null;
+}
+
 async function waitForTabComplete(tabId, timeoutMs = 25000) {
     const deadline = Date.now() + timeoutMs;
 
@@ -48,6 +74,20 @@ async function sendMessageWithRetry(tabId, message, timeoutMs = 12000) {
     throw lastError || new Error("Код расширения не запустился на странице товара");
 }
 
+async function startCollectionFromShortcut(tab) {
+    const stored = await chrome.storage.local.get("ozonFreshFilterRules");
+    const rules = stored.ozonFreshFilterRules || {};
+
+    await sendMessageWithRetry(tab.id, {
+        type: "OZON_FRESH_APPLY_RULES",
+        payload: rules
+    }, 7000);
+
+    return await sendMessageWithRetry(tab.id, {
+        type: "OZON_FRESH_START"
+    }, 7000);
+}
+
 async function addToCartInBackground(product) {
     if (!product?.url || !product?.id)
         return { ok: false, message: "Некорректные данные товара" };
@@ -74,21 +114,25 @@ chrome.runtime.onInstalled.addListener(initialize);
 chrome.runtime.onStartup.addListener(initialize);
 
 chrome.action.onClicked.addListener(tab => {
-    if (!tab?.id || !isOzonUrl(tab.url))
+    openPanelForTab(tab);
+});
+
+chrome.commands.onCommand.addListener(async command => {
+    if (command !== "collect-products")
         return;
 
-    const tabId = tab.id;
+    const tab = await getActiveOzonTab();
 
-    // Не ждём Promise, иначе Chrome может потерять пользовательский жест.
-    chrome.sidePanel.setOptions({
-        tabId,
-        path: `${PANEL_PATH}?tabId=${tabId}`,
-        enabled: true
-    }).catch(console.error);
+    if (!tab)
+        return;
 
-    chrome.sidePanel.open({ tabId }).catch(error => {
-        console.error("Не удалось открыть боковую панель", error);
-    });
+    openPanelForTab(tab);
+
+    try {
+        await startCollectionFromShortcut(tab);
+    } catch (error) {
+        console.error("Не удалось запустить сбор по горячей клавише", error);
+    }
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
