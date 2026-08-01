@@ -1,9 +1,14 @@
-#productList { gap: 10px; }
+#productList {
+    gap: 8px;
+}
 
 .product {
+    position: relative;
     grid-template-columns: 92px minmax(0, 1fr);
-    gap: 12px;
-    padding: 10px;
+    align-items: start;
+    gap: 8px;
+    min-height: 100px;
+    padding: 4px;
 }
 
 .product img {
@@ -12,30 +17,60 @@
     border-radius: 10px;
 }
 
+.product-body {
+    position: relative;
+    min-height: 92px;
+    padding: 3px 130px 3px 2px;
+}
+
 .product-title {
-    margin-bottom: 6px;
-    font-size: 14px;
+    display: -webkit-box;
+    margin-bottom: 3px;
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.25;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.product-meta {
+    gap: 3px 6px;
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.product-category,
+.source {
+    padding: 2px 5px;
+}
+
+.product-actions {
+    position: absolute;
+    right: 0;
+    bottom: 3px;
+    margin: 0;
 }
 
 .cart-button {
-    min-width: 124px;
-    padding: 11px 16px;
-    font-size: 14px;
+    min-width: 118px;
+    min-height: 42px;
+    padding: 8px 12px;
+    font-size: 13px;
     font-weight: 700;
 }
 
 .value-metrics {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 7px;
-    font-size: 12px;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 11px;
     font-variant-numeric: tabular-nums;
 }
 
 .weight-item,
 .grams-per-ruble {
-    padding: 3px 8px;
+    padding: 2px 7px;
     border: 1px solid #465066;
     border-radius: 999px;
     background: #252c38;
@@ -46,4 +81,27 @@
     border-color: transparent;
     color: #fff;
     font-weight: 700;
+}
+
+.nutrition {
+    gap: 3px;
+    margin-top: 4px;
+    font-size: 11px;
+}
+
+.reason,
+.green-match {
+    margin-top: 3px;
+    font-size: 11px;
+}
+
+@media (max-width: 560px) {
+    .product-body {
+        padding-right: 2px;
+    }
+
+    .product-actions {
+        position: static;
+        margin-top: 5px;
+    }
 }
