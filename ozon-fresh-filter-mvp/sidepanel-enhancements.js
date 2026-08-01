@@ -21,13 +21,18 @@
 
     function parseWeightGrams(title) {
         const text = String(title || "").toLocaleLowerCase("ru-RU");
-        const kg = text.match(/(\d+(?:[.,]\d+)?)\s*кг\b/);
+        const multiplied = text.match(/(\d+)\s*[xх×]\s*(\d+(?:[.,]\d+)?)\s*(?:г|гр)(?![а-яёa-z])/i);
 
-        if (kg)
-            return Math.round(parseNumber(kg[1]) * 1000);
+        if (multiplied)
+            return Math.round(Number(multiplied[1]) * parseNumber(multiplied[2]));
 
-        const grams = text.match(/(\d+(?:[.,]\d+)?)\s*(?:г|гр)\b/);
-        return grams ? Math.round(parseNumber(grams[1])) : null;
+        const kgMatches = [...text.matchAll(/(\d+(?:[.,]\d+)?)\s*кг(?![а-яёa-z])/giu)];
+
+        if (kgMatches.length)
+            return Math.round(parseNumber(kgMatches.at(-1)[1]) * 1000);
+
+        const gramMatches = [...text.matchAll(/(\d+(?:[.,]\d+)?)\s*(?:г|гр|грамм(?:а|ов)?)(?![а-яёa-z])/giu)];
+        return gramMatches.length ? Math.round(parseNumber(gramMatches.at(-1)[1])) : null;
     }
 
     function enhanceCard(card) {
@@ -53,6 +58,9 @@
             (nutrition || meta)?.insertAdjacentElement("afterend", metrics);
         }
 
+        if (!metrics)
+            return;
+
         const weightText = `${weightGrams.toLocaleString("ru-RU")} г`;
         const ratioText = `${gramsPerRub.toFixed(2)} г/₽`;
         let weight = metrics.querySelector(":scope > .weight-item");
@@ -71,11 +79,8 @@
             metrics.appendChild(ratio);
         }
 
-        if (weight.textContent !== weightText)
-            weight.textContent = weightText;
-
-        if (ratio.textContent !== ratioText)
-            ratio.textContent = ratioText;
+        weight.textContent = weightText;
+        ratio.textContent = ratioText;
     }
 
     function colorize(cards) {
@@ -97,14 +102,8 @@
             const position = max > min ? (value - min) / (max - min) : 1;
             const hue = Math.round(position * 120);
             const label = position >= .75 ? "очень выгодно" : position >= .4 ? "средне" : "не очень выгодно";
-            const background = `hsl(${hue} 68% 36%)`;
-            const title = `${value.toFixed(2)} грамма за 1 ₽ — ${label} относительно показанных товаров`;
-
-            if (badge.style.background !== background)
-                badge.style.background = background;
-
-            if (badge.title !== title)
-                badge.title = title;
+            badge.style.background = `hsl(${hue} 68% 36%)`;
+            badge.title = `${value.toFixed(2)} грамма за 1 ₽ — ${label} относительно показанных товаров`;
         }
     }
 
@@ -113,10 +112,6 @@
             return;
 
         const sorted = [...cards].sort((a, b) => (Number(b.dataset.gramsPerRub) || -1) - (Number(a.dataset.gramsPerRub) || -1));
-        const alreadySorted = sorted.every((card, index) => card === cards[index]);
-
-        if (alreadySorted)
-            return;
 
         for (const card of sorted)
             productList.appendChild(card);
